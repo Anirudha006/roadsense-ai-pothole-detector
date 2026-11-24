@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Maximize2, RefreshCw } from 'lucide-react';
+import { Maximize2, RefreshCw, Move, Minus, Camera } from 'lucide-react';
 import { HeaderStatusBar } from './components/HeaderStatusBar';
 import { FloatingSpeedometer } from './components/FloatingSpeedometer';
 import { AlertBanner, ActiveAlert } from './components/AlertBanner';
@@ -28,6 +28,7 @@ import { DriverCloudSyncService } from './services/supabaseService';
 import {
   Detection,
   Hazard,
+  SeverityLevel,
   destinationPoint,
   VehicleType,
   DetectionMode,
@@ -55,6 +56,47 @@ export const App: React.FC = () => {
 
   // Corner Google Map expansion toggle (Default to true: Google Map is the primary first screen)
   const [isCornerMapExpanded, setIsCornerMapExpanded] = useState(true);
+
+  // Moveable Camera PiP Docking & Drag Position
+  type PipPosition = 'bottom-right' | 'bottom-left' | 'middle-right' | 'top-left' | 'top-right';
+  const [cameraPipPos, setCameraPipPos] = useState<PipPosition>('bottom-right');
+  const [isCameraPipMinimized, setIsCameraPipMinimized] = useState(false);
+  const [customPipCoord, setCustomPipCoord] = useState<{ x: number; y: number } | null>(null);
+  const touchStartRef = useRef<{ touchX: number; touchY: number; initX: number; initY: number } | null>(null);
+
+  const pipCornerClasses: Record<PipPosition, string> = {
+    'bottom-right': 'fixed bottom-24 right-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
+    'bottom-left': 'fixed bottom-24 left-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
+    'middle-right': 'fixed top-48 right-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
+    'top-left': 'fixed top-48 left-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
+    'top-right': 'fixed top-14 right-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
+  };
+
+  const handleCycleCameraPipPos = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCustomPipCoord(null);
+    setCameraPipPos((prev) => {
+      switch (prev) {
+        case 'bottom-right': return 'bottom-left';
+        case 'bottom-left': return 'middle-right';
+        case 'middle-right': return 'top-left';
+        case 'top-left': return 'top-right';
+        case 'top-right': return 'bottom-right';
+        default: return 'bottom-right';
+      }
+    });
+  };
+
+  const handleCycleRiskFactorFilter = () => {
+    const nextFilter =
+      settings.riskFactorFilter === 'high_only'
+        ? 'medium_high'
+        : settings.riskFactorFilter === 'medium_high'
+        ? 'all'
+        : 'high_only';
+    setSettings((prev) => ({ ...prev, riskFactorFilter: nextFilter }));
+    localStorageService.saveSettings({ ...settings, riskFactorFilter: nextFilter });
+  };
 
   // 12-Device Quorum State
   const [auditState, setAuditState] = useState<AuditState>(() =>
@@ -122,11 +164,18 @@ export const App: React.FC = () => {
       // Suppress alerts if stationary (< 10 km/h) or desk handling
       if (gps.speedKmh < 10) return;
 
+      const severity: SeverityLevel = classification.magnitudeG > 2.0 ? 'critical' : 'medium';
+
+      // Evaluate Risk Factor Alert Filter
+      if (settings.riskFactorFilter === 'high_only' && severity !== 'critical') {
+        return; // Suppress medium risk vibration impacts when user requested High Risk Only
+      }
+
       const alertObj: ActiveAlert = {
         id: `vib_alert_${Date.now()}`,
         hazardClass: 'pothole',
         distanceMeters: 5,
-        severity: classification.magnitudeG > 2.0 ? 'critical' : 'medium',
+        severity,
         confidence: classification.confidence,
         detectedAt: Date.now(),
       };
@@ -143,7 +192,7 @@ export const App: React.FC = () => {
         HapticService.trigger(alertObj.severity);
       }
 
-      // Record to trip if running
+      // Record to trip if running and stream live to Supabase PostGIS cloud
       if (trip.isRecording) {
         const newHazard: Hazard = {
           id: `vib_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
@@ -163,6 +212,18 @@ export const App: React.FC = () => {
           reporterHash: `imu_drv_${Math.floor(1000 + Math.random() * 9000)}`,
         };
         trip.recordHazard(newHazard);
+
+        // Stream real-time G-force pothole directly to Supabase cloud
+        DriverCloudSyncService.streamDetectionToCloud({
+          hazardId: newHazard.id,
+          latitude: newHazard.lat,
+          longitude: newHazard.lon,
+          speedKmh: newHazard.speedKmh,
+          heading: newHazard.heading,
+          confidence: newHazard.confidence,
+          severity: newHazard.severity,
+          imageUrl: `supabase://pothole-training-images/${newHazard.id}.jpg`,
+        });
       }
     },
     [gps.lat, gps.lon, gps.speedKmh, gps.heading, settings, trip]
@@ -223,8 +284,16 @@ export const App: React.FC = () => {
 
       setRouteStatus(assessment.status);
 
-      // Trigger advance predictive warning only when moving towards hazard
+      // Trigger advance predictive warning only when moving towards hazard and matching Risk Factor Filter
       if (assessment.shouldAlert && assessment.imminentHazard && !activeAlert) {
+        const hazSev = assessment.imminentHazard.severity;
+        if (settings.riskFactorFilter === 'high_only' && hazSev !== 'critical') {
+          return; // Suppress medium & low risk alerts
+        }
+        if (settings.riskFactorFilter === 'medium_high' && hazSev === 'low') {
+          return; // Suppress low risk alerts
+        }
+
         const dist = Math.max(10, Math.round(assessment.imminentDistanceMeters || 30));
         const alertObj: ActiveAlert = {
           id: `pred_alert_${assessment.imminentHazard.id}`,
@@ -249,7 +318,7 @@ export const App: React.FC = () => {
     } else {
       setRouteStatus('surveyed');
     }
-  }, [gps.lat, gps.lon, gps.speedKmh, gps.heading, gps.isLocked, trip.isRecording, cachedHazards]);
+  }, [gps.lat, gps.lon, gps.speedKmh, gps.heading, gps.isLocked, trip.isRecording, cachedHazards, settings.riskFactorFilter]);
 
   // Handle Detections from Video Canvas with GPS Photo Stamping for Cloud Retraining
   const handleDetections = useCallback(
@@ -272,6 +341,14 @@ export const App: React.FC = () => {
       // Filter out low-confidence indoor noise; only alert on genuine road hazards
       if (urgent.confidence < 0.55 && estimatedDepthCm < depthThreshold) {
         return; // Negligible, suppress warning
+      }
+
+      // Respect Risk Factor Alert Filter (High Only vs Med+High vs All)
+      if (settings.riskFactorFilter === 'high_only' && urgent.severity !== 'critical') {
+        return; // Suppress medium / low alerts
+      }
+      if (settings.riskFactorFilter === 'medium_high' && urgent.severity === 'low') {
+        return; // Suppress low risk alerts
       }
 
       // Check if within speed-adaptive warning distance
@@ -460,58 +537,124 @@ export const App: React.FC = () => {
         }}
       />
 
-      {/* 4. Camera Detection Canvas (Smoothly transforms between Full-Screen and Floating PiP over Google Maps) */}
-      <div
-        className={`transition-all duration-300 ${
-          isCornerMapExpanded
-            ? 'fixed top-12 right-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32 rounded-2xl overflow-hidden shadow-2xl border-2 border-white/90 bg-black cursor-pointer'
-            : 'absolute inset-0 z-0 w-full h-full'
-        } ${!isCameraOn ? 'hidden' : ''}`}
-        onClick={() => {
-          if (isCornerMapExpanded) setIsCornerMapExpanded(false);
-        }}
-      >
-        <VideoDetectionCanvas
-          isSimulated={isSimulated}
-          simulatedSpeedKmh={gps.speedKmh}
-          onDetectionsUpdate={handleDetections}
-          isTorchOn={isTorchOn}
-          cameraFacing={cameraFacing}
-        />
-        {/* Floating PiP Controls when Map is Expanded */}
-        {isCornerMapExpanded && (
-          <>
-            <div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between z-30 pointer-events-none">
-              <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-black/75 text-emerald-400 backdrop-blur-xs flex items-center gap-1 border border-emerald-500/30">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                AI VISION
-              </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsCornerMapExpanded(false);
+      {/* 4. Camera Detection Canvas (Moveable, Draggable & Dockable PiP over Google Maps) */}
+      {isCornerMapExpanded && isCameraPipMinimized ? (
+        /* Floating Compact Pill Badge when Minimized */
+        <div
+          onClick={() => setIsCameraPipMinimized(false)}
+          className="fixed bottom-24 right-3.5 z-[150] bg-slate-900/95 text-emerald-400 border border-emerald-500/50 rounded-full px-3 py-1.5 shadow-2xl flex items-center gap-2 cursor-pointer active:scale-95 transition-all text-xs font-black backdrop-blur-md"
+          title="Tap to Expand Camera Box"
+        >
+          <Camera className="w-3.5 h-3.5" />
+          <span>AI VISION (ON)</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+        </div>
+      ) : (
+        <div
+          style={
+            isCornerMapExpanded && customPipCoord
+              ? { left: `${customPipCoord.x}px`, top: `${customPipCoord.y}px` }
+              : undefined
+          }
+          className={`transition-all duration-300 ${
+            isCornerMapExpanded
+              ? `${customPipCoord ? 'fixed z-[150] w-36 h-28 sm:w-44 sm:h-32' : pipCornerClasses[cameraPipPos]} rounded-2xl overflow-hidden shadow-2xl border-2 border-white/90 bg-black`
+              : 'absolute inset-0 z-0 w-full h-full'
+          } ${!isCameraOn ? 'hidden' : ''}`}
+        >
+          <VideoDetectionCanvas
+            isSimulated={isSimulated}
+            simulatedSpeedKmh={gps.speedKmh}
+            onDetectionsUpdate={handleDetections}
+            isTorchOn={isTorchOn}
+            cameraFacing={cameraFacing}
+          />
+          {/* Floating PiP Controls when Map is Expanded */}
+          {isCornerMapExpanded && (
+            <>
+              {/* Draggable & Moveable Header Bar */}
+              <div
+                onTouchStart={(e) => {
+                  const t = e.touches[0];
+                  touchStartRef.current = {
+                    touchX: t.clientX,
+                    touchY: t.clientY,
+                    initX: customPipCoord?.x || (window.innerWidth - 170),
+                    initY: customPipCoord?.y || (window.innerHeight - 200),
+                  };
                 }}
-                className="pointer-events-auto p-1 rounded-full bg-black/70 text-white hover:bg-black/90 active:scale-95 border border-white/30"
-                title="Full Camera View"
-              >
-                <Maximize2 className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="absolute bottom-1 right-1 flex items-center gap-1 z-30">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCameraFacing((prev) => (prev === 'environment' ? 'user' : 'environment'));
+                onTouchMove={(e) => {
+                  if (!touchStartRef.current) return;
+                  const t = e.touches[0];
+                  const dx = t.clientX - touchStartRef.current.touchX;
+                  const dy = t.clientY - touchStartRef.current.touchY;
+                  const nx = Math.max(10, Math.min(window.innerWidth - 160, touchStartRef.current.initX + dx));
+                  const ny = Math.max(60, Math.min(window.innerHeight - 180, touchStartRef.current.initY + dy));
+                  setCustomPipCoord({ x: nx, y: ny });
                 }}
-                className="p-1 rounded-full bg-black/70 text-white hover:bg-black/90 border border-white/20 active:scale-95"
-                title="Flip Camera"
+                onTouchEnd={() => {
+                  touchStartRef.current = null;
+                }}
+                className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between z-30 cursor-move bg-black/60 backdrop-blur-xs px-1.5 py-0.5 rounded-lg border border-white/10"
               >
-                <RefreshCw className="w-2.5 h-2.5" />
-              </button>
-            </div>
-          </>
-        )}
-      </div>
+                <span className="text-[8px] font-black text-emerald-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  AI VISION
+                </span>
+
+                <div className="flex items-center gap-1">
+                  {/* Move to next corner button */}
+                  <button
+                    onClick={handleCycleCameraPipPos}
+                    className="p-1 rounded bg-black/70 hover:bg-black text-teal-300 border border-white/20 active:scale-95"
+                    title="Move camera to next corner"
+                  >
+                    <Move className="w-2.5 h-2.5" />
+                  </button>
+
+                  {/* Minimize to small pill button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCameraPipMinimized(true);
+                    }}
+                    className="p-1 rounded bg-black/70 hover:bg-black text-amber-300 border border-white/20 active:scale-95"
+                    title="Minimize camera box"
+                  >
+                    <Minus className="w-2.5 h-2.5" />
+                  </button>
+
+                  {/* Maximize to full camera view */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsCornerMapExpanded(false);
+                    }}
+                    className="p-1 rounded bg-black/70 text-white hover:bg-black active:scale-95 border border-white/20"
+                    title="Full Camera View"
+                  >
+                    <Maximize2 className="w-2.5 h-2.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Bottom Flip Camera button */}
+              <div className="absolute bottom-1 right-1 flex items-center gap-1 z-30">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCameraFacing((prev) => (prev === 'environment' ? 'user' : 'environment'));
+                  }}
+                  className="p-1 rounded-full bg-black/70 text-white hover:bg-black/90 border border-white/20 active:scale-95"
+                  title="Flip Camera"
+                >
+                  <RefreshCw className="w-2.5 h-2.5" />
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Alternative Viewport: Vibration HUD if camera is turned off */}
       {!isCameraOn && !isCornerMapExpanded && (
@@ -549,6 +692,8 @@ export const App: React.FC = () => {
         onToggleVehicleType={() =>
           setVehicleType((prev) => (prev === 'two_wheeler' ? 'four_wheeler' : 'two_wheeler'))
         }
+        riskFactorFilter={settings.riskFactorFilter}
+        onCycleRiskFilter={handleCycleRiskFactorFilter}
       />
 
       {/* 5. Unified Bottom Trip Controls & Integrated G-Force Seismograph (Zero Overlaps) */}

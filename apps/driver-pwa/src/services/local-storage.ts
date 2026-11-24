@@ -5,6 +5,7 @@ export interface AppSettings {
   soundChimeEnabled: boolean;
   hapticsEnabled: boolean;
   language: 'en' | 'kn' | 'hi';
+  riskFactorFilter: 'high_only' | 'medium_high' | 'all';
   confThreshold: number;
   reactionTimeSec: number;
   cameraHeightMeters: number;
@@ -19,6 +20,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   soundChimeEnabled: true,
   hapticsEnabled: true,
   language: 'en',
+  riskFactorFilter: 'high_only',
   confThreshold: 0.45,
   reactionTimeSec: 1.5,
   cameraHeightMeters: 1.2,

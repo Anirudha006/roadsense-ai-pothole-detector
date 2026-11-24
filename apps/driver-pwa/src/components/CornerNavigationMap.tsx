@@ -190,6 +190,9 @@ interface CornerNavigationMapProps {
   // Vehicle Selection Sync (Car vs Bike)
   vehicleType?: VehicleType;
   onToggleVehicleType?: () => void;
+  // Risk Factor Alert Filter
+  riskFactorFilter?: 'high_only' | 'medium_high' | 'all';
+  onCycleRiskFilter?: () => void;
 }
 
 export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
@@ -211,6 +214,8 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
   cameraPiPNode,
   vehicleType = 'four_wheeler',
   onToggleVehicleType,
+  riskFactorFilter = 'high_only',
+  onCycleRiskFilter,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -1414,6 +1419,32 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
               >
                 <span>{vehicleType === 'two_wheeler' ? '🏍️ Bike' : '🚗 Car'}</span>
               </button>
+
+              {onCycleRiskFilter && (
+                <>
+                  <span className="text-slate-600">|</span>
+                  <button
+                    onClick={onCycleRiskFilter}
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-extrabold flex items-center gap-1 border active:scale-95 transition-all ${
+                      riskFactorFilter === 'high_only'
+                        ? 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-sm'
+                        : riskFactorFilter === 'medium_high'
+                        ? 'bg-amber-950/90 text-amber-300 border-amber-500/60 shadow-sm'
+                        : 'bg-teal-950/90 text-teal-300 border-teal-500/60 shadow-sm'
+                    }`}
+                    title="Tap to toggle Risk Factor Alert Filter: High Risk Only (Critical) vs Med+High vs All"
+                  >
+                    <span>🛡️</span>
+                    <span>
+                      {riskFactorFilter === 'high_only'
+                        ? 'Risk: High Only'
+                        : riskFactorFilter === 'medium_high'
+                        ? 'Risk: Med+High'
+                        : 'Risk: All'}
+                    </span>
+                  </button>
+                </>
+              )}
             </div>
           )}
 

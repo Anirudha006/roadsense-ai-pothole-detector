@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Volume2, Globe, Sliders, Shield, Camera, Cpu, SlidersHorizontal } from 'lucide-react';
+import { X, Volume2, Globe, Sliders, Shield, Camera, Cpu, SlidersHorizontal, AlertTriangle } from 'lucide-react';
 import { AppSettings } from '../services/local-storage';
 
 interface SettingsModalProps {
@@ -38,6 +38,70 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Risk Factor Filter (High, Medium, Low) */}
+        <div className="bg-white p-3.5 rounded-2xl border border-rose-100 shadow-xs space-y-2.5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-bold text-rose-600">
+              <AlertTriangle className="w-4 h-4" />
+              <span>Risk Factor Alert Filter</span>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-bold border border-rose-200">
+              {settings.riskFactorFilter === 'high_only'
+                ? 'High Risk Only'
+                : settings.riskFactorFilter === 'medium_high'
+                ? 'Med + High'
+                : 'All Hazards'}
+            </span>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Choose which defect severity levels trigger audible voice warnings and HUD alarms:
+          </p>
+
+          <div className="grid grid-cols-3 gap-2 pt-1">
+            <button
+              onClick={() => handleChange('riskFactorFilter', 'high_only')}
+              className={`p-2.5 rounded-xl border text-center transition-all ${
+                settings.riskFactorFilter === 'high_only'
+                  ? 'bg-rose-500 text-white border-rose-500 shadow-sm font-extrabold'
+                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-rose-300'
+              }`}
+            >
+              <span className="text-xs font-bold block">High Risk</span>
+              <span className={`text-[9px] block ${settings.riskFactorFilter === 'high_only' ? 'text-rose-100' : 'text-slate-400'}`}>
+                Critical Only
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleChange('riskFactorFilter', 'medium_high')}
+              className={`p-2.5 rounded-xl border text-center transition-all ${
+                settings.riskFactorFilter === 'medium_high'
+                  ? 'bg-amber-500 text-white border-amber-500 shadow-sm font-extrabold'
+                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-amber-300'
+              }`}
+            >
+              <span className="text-xs font-bold block">Med &amp; High</span>
+              <span className={`text-[9px] block ${settings.riskFactorFilter === 'medium_high' ? 'text-amber-100' : 'text-slate-400'}`}>
+                Skip Low
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleChange('riskFactorFilter', 'all')}
+              className={`p-2.5 rounded-xl border text-center transition-all ${
+                settings.riskFactorFilter === 'all'
+                  ? 'bg-teal-600 text-white border-teal-600 shadow-sm font-extrabold'
+                  : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-teal-300'
+              }`}
+            >
+              <span className="text-xs font-bold block">All Risks</span>
+              <span className={`text-[9px] block ${settings.riskFactorFilter === 'all' ? 'text-teal-100' : 'text-slate-400'}`}>
+                Low + Med + High
+              </span>
+            </button>
+          </div>
+        </div>
+
         {/* 1. Voice and Language */}
         <div className="bg-white p-3.5 rounded-2xl border border-[#D8EEEA] space-y-3">
           <div className="flex items-center gap-2 text-xs font-bold text-[#0D9488]">

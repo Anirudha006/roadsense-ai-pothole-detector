@@ -153,6 +153,60 @@ export const HazardProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   }, [trainingImages]);
 
+  // Live Cloud Polling: Sync newly surveyed potholes from mobile devices via Supabase PostGIS
+  useEffect(() => {
+    let isMounted = true;
+
+    const pollCloudDetections = async () => {
+      try {
+        const cloudRecords = await SupabaseService.fetchTrainingRecords();
+        if (!isMounted || !cloudRecords || cloudRecords.length === 0) return;
+
+        setTrainingImages((prev) => {
+          const existingIds = new Set(prev.map((r) => r.hazardId));
+          const newItems: TrainingImageRecord[] = [];
+
+          for (const cr of cloudRecords) {
+            if (!existingIds.has(cr.hazard_id)) {
+              newItems.push({
+                id: cr.id || `train-${cr.hazard_id}`,
+                hazardId: cr.hazard_id,
+                imageUrl: cr.image_url,
+                lat: cr.latitude,
+                lon: cr.longitude,
+                altitude: cr.altitude || 762,
+                heading: cr.heading || 0,
+                speedKmh: cr.speed_kmh || 0,
+                timestamp: cr.created_at ? new Date(cr.created_at).getTime() : Date.now(),
+                confidence: cr.confidence,
+                severity: cr.severity,
+                areaName: 'Mysuru Survey Network',
+                boundingBox: cr.bbox || { x: 0.25, y: 0.3, width: 0.38, height: 0.36 },
+                cloudStatus: 'synced',
+                cloudStorageUrl: cr.image_url,
+                yoloAnnotation: cr.yolo_label || '0 0.46 0.52 0.38 0.36',
+              });
+            }
+          }
+
+          if (newItems.length > 0) {
+            return [...newItems, ...prev];
+          }
+          return prev;
+        });
+      } catch (err) {
+        // Quiet fallback
+      }
+    };
+
+    pollCloudDetections();
+    const interval = setInterval(pollCloudDetections, 8000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
+
   // Total surveyed kilometers dynamically summed across all surveyed areas
   const totalSurveyedKm = useMemo(() => {
     return Number(WARDS_DATA.reduce((acc, w) => acc + (w.surveyedKm || 0), 0).toFixed(1));
