@@ -24,6 +24,7 @@ import { HapticService } from './services/haptics';
 import { wakeLockService } from './services/wake-lock';
 import { localStorageService, AppSettings, DEFAULT_SETTINGS } from './services/local-storage';
 import { TelemetrySimulator } from './services/telemetry-simulator';
+import { DriverCloudSyncService } from './services/supabaseService';
 import {
   Detection,
   Hazard,
@@ -317,6 +318,18 @@ export const App: React.FC = () => {
           };
 
           trip.recordHazard(newHazard);
+
+          // Stream directly to Supabase PostGIS cloud table with attached GPS
+          DriverCloudSyncService.streamDetectionToCloud({
+            hazardId: newHazard.id,
+            latitude: newHazard.lat,
+            longitude: newHazard.lon,
+            speedKmh: newHazard.speedKmh,
+            heading: newHazard.heading,
+            confidence: newHazard.confidence,
+            severity: newHazard.severity,
+            imageUrl: snapshotUrl,
+          });
         }
       }
     },
