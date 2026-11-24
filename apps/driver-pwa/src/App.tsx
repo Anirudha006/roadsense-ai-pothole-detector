@@ -67,9 +67,9 @@ export const App: React.FC = () => {
   const pipCornerClasses: Record<PipPosition, string> = {
     'bottom-right': 'fixed bottom-24 right-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
     'bottom-left': 'fixed bottom-24 left-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
-    'middle-right': 'fixed top-48 right-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
-    'top-left': 'fixed top-48 left-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
-    'top-right': 'fixed top-14 right-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
+    'middle-right': 'fixed top-56 right-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
+    'top-left': 'fixed top-56 left-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
+    'top-right': 'fixed top-56 right-3.5 z-[150] w-36 h-28 sm:w-44 sm:h-32',
   };
 
   const handleCycleCameraPipPos = (e: React.MouseEvent) => {

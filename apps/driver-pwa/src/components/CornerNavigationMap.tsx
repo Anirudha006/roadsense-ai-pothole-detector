@@ -1332,7 +1332,7 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
 
         {/* ================= EXPANDED VIEW: TOP FROM-WHERE-TO-WHERE BAR (PREVIEW MODE) ================= */}
         {isExpanded && !isNavigating && (
-          <div className="absolute top-2.5 left-2.5 right-2.5 z-30 bg-[#0F172A]/95 backdrop-blur-md border border-slate-800 px-3 pt-3 pb-2 shadow-2xl rounded-2xl flex flex-col gap-2 text-white pointer-events-auto animate-in fade-in duration-200">
+          <div className="absolute top-2.5 left-2.5 right-2.5 z-30 bg-[#0F172A]/95 backdrop-blur-md border border-slate-800 px-3 pt-3 pb-2.5 shadow-2xl rounded-2xl flex flex-col gap-2 text-white pointer-events-auto animate-in fade-in duration-200">
             <div className="flex items-center gap-2">
               <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                 {/* FROM INPUT */}
@@ -1374,7 +1374,7 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
                 </div>
               </div>
 
-              {/* Action Buttons: Swap, Vehicle Toggle, & Exit */}
+              {/* Action Buttons: Swap & Exit */}
               <div className="flex flex-col gap-1.5 flex-shrink-0">
                 <button
                   onClick={handleSwapLocations}
@@ -1382,17 +1382,6 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
                   title="Swap Origin & Destination"
                 >
                   <ArrowUpDown className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={onToggleVehicleType}
-                  className={`w-8 h-8 rounded-xl flex items-center justify-center text-sm font-bold active:scale-95 transition-all border ${
-                    vehicleType === 'two_wheeler'
-                      ? 'bg-emerald-950/90 text-emerald-400 border-emerald-500/50 shadow-sm'
-                      : 'bg-blue-950/90 text-blue-400 border-blue-500/50 shadow-sm'
-                  }`}
-                  title={vehicleType === 'two_wheeler' ? 'Selected: Bike (Tap to switch to Car)' : 'Selected: Car (Tap to switch to Bike)'}
-                >
-                  {vehicleType === 'two_wheeler' ? '🏍️' : '🚗'}
                 </button>
                 {onToggleExpand && (
                   <button
@@ -1424,6 +1413,57 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
                   {d.shortName}
                 </button>
               ))}
+            </div>
+
+            {/* Integrated Full-Width Road Survey Coverage & Risk Filter Strip (No Gap on the Right) */}
+            <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/80 text-xs">
+              <div className="flex items-center gap-2">
+                <div
+                  className="flex items-center gap-1.5 text-[11px] font-black text-emerald-400"
+                  title="Verified survey passes recorded by RoadSense AI"
+                >
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                  <span>Surveyed: Green</span>
+                </div>
+                <span className="text-slate-600">|</span>
+                <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1" title="Unsurveyed roads remain 100% blank">
+                  <span className="w-1.5 h-1.5 rounded-full border border-slate-500 bg-transparent"></span>
+                  Unsurveyed: Blank
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={onToggleVehicleType}
+                  className="px-2 py-0.5 rounded-full bg-[#1E293B] hover:bg-slate-700 text-[10px] font-bold text-slate-200 border border-slate-700 flex items-center gap-1 active:scale-95 transition-all"
+                  title="Toggle Car / Bike Cursor"
+                >
+                  <span>{vehicleType === 'two_wheeler' ? '🏍️ Bike' : '🚗 Car'}</span>
+                </button>
+
+                {onCycleRiskFilter && (
+                  <button
+                    onClick={onCycleRiskFilter}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 border active:scale-95 transition-all ${
+                      riskFactorFilter === 'high_only'
+                        ? 'bg-rose-950/90 text-rose-300 border-rose-500/60 shadow-sm'
+                        : riskFactorFilter === 'medium_high'
+                        ? 'bg-amber-950/90 text-amber-300 border-amber-500/60 shadow-sm'
+                        : 'bg-teal-950/90 text-teal-300 border-teal-500/60 shadow-sm'
+                    }`}
+                    title="Risk Factor Alert Filter"
+                  >
+                    <span>🛡️</span>
+                    <span>
+                      {riskFactorFilter === 'high_only'
+                        ? 'High Only'
+                        : riskFactorFilter === 'medium_high'
+                        ? 'Med+High'
+                        : 'All Risks'}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -1522,13 +1562,9 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
             }}
           />
 
-          {/* ================= FLOATING ROAD SURVEY COVERAGE PILL ================= */}
-          {isExpanded && (
-            <div
-              className={`absolute ${
-                isNavigating ? 'top-[106px]' : 'top-[156px]'
-              } left-3 z-30 flex items-center gap-2 bg-[#0F172A]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-lg border border-slate-700/80 text-white pointer-events-auto transition-all`}
-            >
+          {/* ================= FLOATING ROAD SURVEY COVERAGE PILL (NAV MODE ONLY) ================= */}
+          {isExpanded && isNavigating && (
+            <div className="absolute top-[106px] left-3 z-30 flex items-center gap-2 bg-[#0F172A]/90 backdrop-blur-md px-3.5 py-1.5 rounded-full shadow-lg border border-slate-700/80 text-white pointer-events-auto transition-all">
               <div
                 className="flex items-center gap-1.5 text-xs font-black text-emerald-400"
                 title="Verified survey passes recorded by RoadSense AI"
@@ -1635,56 +1671,18 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
                 </button>
               )}
 
-              {/* BOTTOM-RIGHT: ZOOM (+/-), ROTATE (↺/↻), COMPASS (🧭), SEARCH, VOICE, AND REPORT BUTTONS */}
+              {/* BOTTOM-RIGHT: 360-VIEW COMPASS, SEARCH, VOICE, VEHICLE, AND REPORT BUTTONS */}
               <div className="absolute right-3.5 bottom-24 z-30 flex flex-col items-center gap-2 pointer-events-auto">
-                {/* Floating Zoom & Rotate Controls */}
-                <div className="flex flex-col rounded-2xl overflow-hidden shadow-2xl border border-slate-700/80 bg-[#0F172A]/90 backdrop-blur-md">
-                  <button
-                    onClick={() => {
-                      setIsUserPanned(true);
-                      mapInstanceRef.current?.zoomIn();
-                    }}
-                    className="w-10 h-10 flex items-center justify-center text-white hover:bg-slate-700 active:bg-slate-600 border-b border-slate-700/60 transition-colors"
-                    title="Zoom In"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsUserPanned(true);
-                      mapInstanceRef.current?.zoomOut();
-                    }}
-                    className="w-10 h-10 flex items-center justify-center text-white hover:bg-slate-700 active:bg-slate-600 border-b border-slate-700/60 transition-colors"
-                    title="Zoom Out"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleRotateLeft}
-                    className="w-10 h-10 flex items-center justify-center text-slate-200 hover:text-white hover:bg-slate-700 active:bg-slate-600 border-b border-slate-700/60 transition-colors"
-                    title="Rotate Map Left (45°)"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleRotateRight}
-                    className="w-10 h-10 flex items-center justify-center text-slate-200 hover:text-white hover:bg-slate-700 active:bg-slate-600 transition-colors"
-                    title="Rotate Map Right (45°)"
-                  >
-                    <RotateCw className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Compass Needle (N) */}
+                {/* 360-View Compass Button */}
                 <button
                   onClick={handleCompassClick}
-                  className="w-11 h-11 rounded-full bg-[#0F172A]/95 text-white shadow-xl border border-slate-700 flex flex-col items-center justify-center active:scale-95 hover:bg-slate-800 transition-all"
+                  className="w-11 h-11 rounded-full bg-[#0F172A]/90 text-white shadow-xl border border-slate-700 flex flex-col items-center justify-center active:scale-95 hover:bg-slate-800 transition-all cursor-pointer"
                   title={
                     mapBearing !== 0
                       ? `Rotated ${Math.round(mapBearing)}°. Tap to reset True North`
                       : isHeadingUp
-                      ? 'Heading-Up Active (Tap for North-Up)'
-                      : 'North-Up Active (Tap for Heading-Up)'
+                      ? 'Heading-Up 360° Active (Tap for North-Up)'
+                      : 'North-Up Active (Tap for 360° Heading-Up)'
                   }
                 >
                   <div
@@ -1694,8 +1692,8 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
                     <div className="w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent border-b-[8px] border-b-rose-500"></div>
                     <div className="w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent border-t-[8px] border-t-slate-400"></div>
                   </div>
-                  <span className="text-[8px] font-black tracking-tighter text-white mt-0.5 leading-none">
-                    {mapBearing !== 0 ? `${Math.round(mapBearing)}°` : isHeadingUp ? 'HDG' : 'N'}
+                  <span className="text-[7.5px] font-black tracking-tighter text-cyan-400 mt-0.5 leading-none">
+                    {mapBearing !== 0 ? `${Math.round(mapBearing)}°` : isHeadingUp ? '360°' : 'N'}
                   </span>
                 </button>
 
@@ -1772,56 +1770,18 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
                 </div>
               </div>
 
-              {/* Bottom Right Controls: Zoom (+/-), Rotate (↺/↻), Compass, Vehicle, Layers, Fit, Recenter */}
+              {/* Bottom Right Controls: 360-View Compass, Vehicle, Layers, Fit, Recenter */}
               <div className="absolute right-3.5 bottom-24 z-30 flex flex-col items-center gap-2 pointer-events-auto">
-                {/* Floating Zoom & Rotate Controls */}
-                <div className="flex flex-col rounded-2xl overflow-hidden shadow-2xl border border-slate-700/80 bg-[#0F172A]/90 backdrop-blur-md">
-                  <button
-                    onClick={() => {
-                      setIsUserPanned(true);
-                      mapInstanceRef.current?.zoomIn();
-                    }}
-                    className="w-10 h-10 flex items-center justify-center text-white hover:bg-slate-700 active:bg-slate-600 border-b border-slate-700/60 transition-colors"
-                    title="Zoom In"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsUserPanned(true);
-                      mapInstanceRef.current?.zoomOut();
-                    }}
-                    className="w-10 h-10 flex items-center justify-center text-white hover:bg-slate-700 active:bg-slate-600 border-b border-slate-700/60 transition-colors"
-                    title="Zoom Out"
-                  >
-                    <Minus className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleRotateLeft}
-                    className="w-10 h-10 flex items-center justify-center text-slate-200 hover:text-white hover:bg-slate-700 active:bg-slate-600 border-b border-slate-700/60 transition-colors"
-                    title="Rotate Map Left (45°)"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={handleRotateRight}
-                    className="w-10 h-10 flex items-center justify-center text-slate-200 hover:text-white hover:bg-slate-700 active:bg-slate-600 transition-colors"
-                    title="Rotate Map Right (45°)"
-                  >
-                    <RotateCw className="w-4 h-4" />
-                  </button>
-                </div>
-
-                {/* Compass Needle (N) */}
+                {/* 360-View Compass Button */}
                 <button
                   onClick={handleCompassClick}
-                  className="w-11 h-11 rounded-full bg-[#0F172A]/95 text-white shadow-xl border border-slate-700 flex flex-col items-center justify-center active:scale-95 hover:bg-slate-800 transition-all"
+                  className="w-11 h-11 rounded-full bg-[#0F172A]/90 text-white shadow-xl border border-slate-700 flex flex-col items-center justify-center active:scale-95 hover:bg-slate-800 transition-all cursor-pointer"
                   title={
                     mapBearing !== 0
                       ? `Rotated ${Math.round(mapBearing)}°. Tap to reset True North`
                       : isHeadingUp
-                      ? 'Heading-Up Active (Tap for North-Up)'
-                      : 'North-Up Active (Tap for Heading-Up)'
+                      ? 'Heading-Up 360° Active (Tap for North-Up)'
+                      : 'North-Up Active (Tap for 360° Heading-Up)'
                   }
                 >
                   <div
@@ -1831,8 +1791,8 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
                     <div className="w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent border-b-[8px] border-b-rose-500"></div>
                     <div className="w-0 h-0 border-l-[3.5px] border-l-transparent border-r-[3.5px] border-r-transparent border-t-[8px] border-t-slate-400"></div>
                   </div>
-                  <span className="text-[8px] font-black tracking-tighter text-white mt-0.5 leading-none">
-                    {mapBearing !== 0 ? `${Math.round(mapBearing)}°` : isHeadingUp ? 'HDG' : 'N'}
+                  <span className="text-[7.5px] font-black tracking-tighter text-cyan-400 mt-0.5 leading-none">
+                    {mapBearing !== 0 ? `${Math.round(mapBearing)}°` : isHeadingUp ? '360°' : 'N'}
                   </span>
                 </button>
 
