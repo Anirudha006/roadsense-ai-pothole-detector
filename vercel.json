@@ -1,6 +1,0 @@
-{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm run build:dashboard",
-  "outputDirectory": "apps/dashboard/dist",
-  "framework": "vite"
-}
