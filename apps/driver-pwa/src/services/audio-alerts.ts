@@ -126,7 +126,7 @@ class AudioAlertService {
     } else {
       langCode = 'en-US';
       const label = hazardClass.includes('crack') ? 'crack' : 'pothole';
-      phrase = `Caution! ${label} ahead, ${distRounded} meters.`;
+      phrase = `Warning! Pothole detected, ${distRounded} meters ahead.`;
     }
 
     try {

@@ -29,6 +29,7 @@ import {
   ShieldCheck,
   Plus,
   Minus,
+  Move,
 } from 'lucide-react';
 import type { Hazard, SurveyedRoad, VehicleType } from '@roadsense/shared';
 import { SURVEYED_ROADS_DATA, TOTAL_SURVEYED_DISTANCE_KM } from '@roadsense/shared';
@@ -309,6 +310,26 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
   const [simCoordIndex, setSimCoordIndex] = useState(0);
   const [simVehiclePos, setSimVehiclePos] = useState<[number, number]>([validLat, validLon]);
   const [simHeading, setSimHeading] = useState(heading || 0);
+
+  // Moveable Corner Docking for Map (Top-Left, Top-Right, Bottom-Right, Bottom-Left)
+  const [cornerPosition, setCornerPosition] = useState<'top-left' | 'top-right' | 'bottom-right' | 'bottom-left'>('top-left');
+
+  const cornerPositionClasses: Record<string, string> = {
+    'top-left': 'fixed top-14 left-3 z-30 w-48 h-36',
+    'top-right': 'fixed top-14 right-3 z-30 w-48 h-36',
+    'bottom-right': 'fixed bottom-36 right-3 z-30 w-48 h-36',
+    'bottom-left': 'fixed bottom-36 left-3 z-30 w-48 h-36',
+  };
+
+  const handleCycleCorner = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setCornerPosition((prev) => {
+      if (prev === 'top-left') return 'top-right';
+      if (prev === 'top-right') return 'bottom-right';
+      if (prev === 'bottom-right') return 'bottom-left';
+      return 'top-left';
+    });
+  };
 
   // Format dynamic ETA time string (e.g. 8:46 pm)
   const formatETA = (minutesFromNow: number) => {
@@ -1147,7 +1168,7 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
             ? 'hidden'
             : isExpanded
             ? 'fixed inset-0 z-[100] bg-[#161D2B] flex flex-col google-maps-midnight'
-            : 'fixed top-14 left-3 z-30 w-48 h-36 bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-700/90 overflow-hidden flex flex-col google-maps-midnight'
+            : `${cornerPositionClasses[cornerPosition]} bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-700/90 overflow-hidden flex flex-col google-maps-midnight`
         }`}
       >
         {/* ================= MINIMIZED CORNER HEADER (CAMERA VIEW) ================= */}
@@ -1163,6 +1184,14 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-1">
+              {/* Move to another corner button */}
+              <button
+                onClick={handleCycleCorner}
+                className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700/80 active:scale-95 transition-all"
+                title={`Docked at ${cornerPosition}. Click to move to next corner.`}
+              >
+                <Move className="w-3 h-3" />
+              </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();

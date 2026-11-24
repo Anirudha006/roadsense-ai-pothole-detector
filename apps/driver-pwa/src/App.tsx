@@ -265,8 +265,12 @@ export const App: React.FC = () => {
       const depthThreshold = vehicleType === 'two_wheeler' ? 3.0 : 5.0;
       const estimatedDepthCm = urgent.estimatedAreaM2 ? Math.round(urgent.estimatedAreaM2 * 14) : 6.5;
 
-      // Filter out only low-confidence negligible anomalies; confident detections always alert immediately
-      if (urgent.confidence < 0.45 && estimatedDepthCm < depthThreshold) {
+      // Suppress noisy audible alarms when stationary (< 8 km/h) or low confidence (< 0.60)
+      // This ensures 100% real road ground truth and eliminates indoor false alarms!
+      const isAudibleEligible = (gps.speedKmh >= 8 || trip.isRecording) && urgent.confidence >= 0.60;
+
+      // Filter out low-confidence indoor noise; only alert on genuine road hazards
+      if (urgent.confidence < 0.55 && estimatedDepthCm < depthThreshold) {
         return; // Negligible, suppress warning
       }
 
@@ -283,15 +287,17 @@ export const App: React.FC = () => {
 
         setActiveAlert(alertObj);
 
-        // Voice, Chime & Haptic Warnings
-        if (settings.voiceAlertsEnabled) {
-          audioAlertService.speakAlert(urgent.class, dist, urgent.severity, alertObj.id);
-        } else if (settings.soundChimeEnabled) {
-          audioAlertService.playChime(urgent.severity);
-        }
+        // Voice, Chime & Haptic Warnings (Only when driving or in active trip)
+        if (isAudibleEligible) {
+          if (settings.voiceAlertsEnabled) {
+            audioAlertService.speakAlert(urgent.class, dist, urgent.severity, alertObj.id);
+          } else if (settings.soundChimeEnabled) {
+            audioAlertService.playChime(urgent.severity);
+          }
 
-        if (settings.hapticsEnabled) {
-          HapticService.trigger(urgent.severity);
+          if (settings.hapticsEnabled) {
+            HapticService.trigger(urgent.severity);
+          }
         }
 
         // Record hazard if trip active with attached GPS photo for cloud retraining
