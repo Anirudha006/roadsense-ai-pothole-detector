@@ -1,0 +1,43 @@
+# RoadSense AI - Improved YOLOv11n Architecture with SPPFCSPC & ScConv
+# References:
+# - Li Zhang (2025, IEEE ICFTIC): Road Pothole Detection Based on Improved YOLOv11 Algorithm
+# Enhancements:
+# 1. SPPFCSPC replaces SPPF: Cuts FLOPs by 40-50%, expands receptive field via serial 5x5 pooling
+# 2. ScConv replaces C2PSA: Suppresses redundant road textures, enhances small pothole edge perception
+
+nc: 4
+scales:
+  n: [0.50, 0.25, 1024]
+
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv, [64, 3, 2]]          # 0-P1/2
+  - [-1, 1, Conv, [128, 3, 2]]         # 1-P2/4
+  - [-1, 2, C3k2, [256, False, 0.25]]  # 2
+  - [-1, 1, Conv, [256, 3, 2]]         # 3-P3/8
+  - [-1, 2, C3k2, [512, False, 0.25]]  # 4
+  - [-1, 1, Conv, [512, 3, 2]]         # 5-P4/16
+  - [-1, 2, C3k2, [512, True]]         # 6
+  - [-1, 1, Conv, [1024, 3, 2]]        # 7-P5/32
+  - [-1, 2, C3k2, [1024, True]]        # 8
+  - [-1, 1, SPPFCSPC, [1024]]          # 9 (Custom Serial Pooling + CSPC)
+  - [-1, 1, ScConv, [1024]]            # 10 (Custom Split-Attention Convolution)
+
+head:
+  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]
+  - [[-1, 6], 1, Concat, [1]]          # cat backbone P4
+  - [-1, 2, C3k2, [512, False]]        # 13
+
+  - [-1, 1, nn.Upsample, [None, 2, 'nearest']]
+  - [[-1, 4], 1, Concat, [1]]          # cat backbone P3
+  - [-1, 2, C3k2, [256, False]]        # 16 (P3/8-small)
+
+  - [-1, 1, Conv, [256, 3, 2]]
+  - [[-1, 13], 1, Concat, [1]]         # cat head P4
+  - [-1, 2, C3k2, [512, False]]        # 19 (P4/16-medium)
+
+  - [-1, 1, Conv, [512, 3, 2]]
+  - [[-1, 10], 1, Concat, [1]]         # cat head P5 (from ScConv output)
+  - [-1, 2, C3k2, [1024, True]]        # 22 (P5/32-large)
+
+  - [[16, 19, 22], 1, Detect, [nc]]    # Detect(P3, P4, P5)

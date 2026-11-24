@@ -1,0 +1,57 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# Production builds & Mobile Artifacts
+dist/
+build/
+.next/
+out/
+*.apk
+*.aab
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ML outputs & weights
+ml/runs/
+*.pt
+*.engine
+ml/datasets/downloads/
+ml/datasets/raw/
+
+# Android Local & Gradle
+.gradle/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Testing & Coverage
+coverage/
+*.lcov
+.nyc_output
+
+# IDE & OS
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+*.tsbuildinfo

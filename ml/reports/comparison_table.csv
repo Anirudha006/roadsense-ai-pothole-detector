@@ -1,0 +1,5 @@
+Model,Precision,Recall,mAP@50,mAP@50-95,Inference Latency (ms),FPS (approx),Parameters,Status
+Base Paper (YOLOv8 + GPS + Cloud),87.9%,85.3%,89.4%,N/A (not reported),22.0 ms,45.4,~3.2M,Published IEEE Baseline
+RoadSense YOLOv8n Baseline,not trained yet,not trained yet,not trained yet,not trained yet,not trained yet,not trained yet,N/A,Pending training run
+RoadSense YOLOv11n Baseline,not trained yet,not trained yet,not trained yet,not trained yet,not trained yet,not trained yet,N/A,Pending training run
+RoadSense YOLOv11n + SPPFCSPC + ScConv,not trained yet,not trained yet,not trained yet,not trained yet,not trained yet,not trained yet,N/A,Pending training run

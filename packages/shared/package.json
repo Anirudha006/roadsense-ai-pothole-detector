@@ -1,0 +1,16 @@
+{
+  "name": "@roadsense/shared",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Shared types, geo calculations, and core utilities for RoadSense AI",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "node --experimental-strip-types --test tests/**/*.test.ts"
+  },
+  "keywords": ["geo", "kalman", "haversine", "pothole", "adas"],
+  "author": "RoadSense AI Team",
+  "license": "MIT"
+}

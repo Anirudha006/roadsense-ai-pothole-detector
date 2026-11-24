@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #F4FBFA;
+  --teal-primary: #14B8A6;
+  --mint-accent: #34D399;
+  --sun-warning: #FBBF24;
+  --coral-danger: #FB7185;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #F4FBFA;
+  color: #0F172A;
+  font-family: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  overflow: hidden;
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F4FBFA;
+}
+::-webkit-scrollbar-thumb {
+  background: #D8EEEA;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #14B8A6;
+}
+
+/* Pulsing radar animation */
+@keyframes radar-pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.7);
+  }
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 12px rgba(20, 184, 166, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0);
+  }
+}
+
+.radar-pulse {
+  animation: radar-pulse 2s infinite;
+}
+
+/* Slide in animation for alert banner */
+@keyframes slide-down {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-down {
+  animation: slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Leaflet Google Maps full container reset */
+.leaflet-container {
+  width: 100% !important;
+  height: 100% !important;
+  background-color: #1a2332 !important;
+  font-family: inherit;
+}
+
+/* Google Maps Midnight Navigation Theme (authentic deep navy slate + readable roads) */
+.google-maps-midnight .leaflet-tile-pane {
+  filter: invert(90%) hue-rotate(198deg) brightness(96%) contrast(94%) saturate(135%);
+}
+
+.google-maps-midnight .leaflet-container {
+  background-color: #1e2d40 !important;
+}

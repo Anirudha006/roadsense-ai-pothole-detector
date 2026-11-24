@@ -1,0 +1,32 @@
+{
+  "name": "roadsense-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-Powered Real-Time Pothole Detection and Geo-Localized Road Hazard Monitoring System",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "test:shared": "npm --workspace=@roadsense/shared test",
+    "test": "npm run test:shared",
+    "dev:driver": "npm --workspace=@roadsense/driver-pwa run dev",
+    "build:driver": "npm --workspace=@roadsense/driver-pwa run build",
+    "preview:driver": "npm --workspace=@roadsense/driver-pwa run preview",
+    "dev:dashboard": "npm --workspace=@roadsense/dashboard run dev",
+    "build:dashboard": "npm --workspace=@roadsense/dashboard run build",
+    "preview:dashboard": "npm --workspace=@roadsense/dashboard run preview",
+    "build": "npm run build:driver && npm run build:dashboard"
+  },
+  "keywords": [
+    "pothole-detection",
+    "yolo",
+    "real-time",
+    "kalman-filter",
+    "haversine",
+    "edge-ai",
+    "its"
+  ],
+  "author": "RoadSense AI Team",
+  "license": "MIT"
+}

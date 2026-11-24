@@ -1,0 +1,17 @@
+{
+  "name": "@roadsense/ui",
+  "version": "1.0.0",
+  "description": "Design system tokens and UI styling utilities for RoadSense AI",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@roadsense/shared": "^1.0.0"
+  },
+  "keywords": ["design-tokens", "tailwind", "ui", "roadsense"],
+  "author": "RoadSense AI Team",
+  "license": "MIT"
+}
