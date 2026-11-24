@@ -1097,6 +1097,10 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
     hazardsLayerRef.current.clearLayers();
 
     hazards.forEach((hazard) => {
+      const hLat = Number(hazard.lat ?? (hazard as any).latitude);
+      const hLon = Number(hazard.lon ?? (hazard as any).longitude);
+      if (!Number.isFinite(hLat) || !Number.isFinite(hLon)) return;
+
       const isSevere = hazard.severity === 'critical' || (hazard.severity as string) === 'high';
       const hazardIcon = L.divIcon({
         className: 'hazard-map-pin',
@@ -1109,7 +1113,7 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
         iconAnchor: [11, 11],
       });
 
-      const marker = L.marker([hazard.lat, hazard.lon], { icon: hazardIcon });
+      const marker = L.marker([hLat, hLon], { icon: hazardIcon });
       marker.bindPopup(`<b>${hazard.class}</b><br/>Severity: ${hazard.severity}`);
       hazardsLayerRef.current?.addLayer(marker);
     });
@@ -1126,8 +1130,23 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
       pastSurveyedPaths.forEach((path, idx) => {
         if (!path || path.length < 2) return;
 
+        const cleanPath: [number, number][] = path
+          .map((pt: any) => {
+            if (Array.isArray(pt)) {
+              const lat = Number(pt[0]);
+              const lon = Number(pt[1]);
+              return Number.isFinite(lat) && Number.isFinite(lon) ? ([lat, lon] as [number, number]) : null;
+            }
+            const lat = Number(pt?.lat ?? pt?.latitude);
+            const lon = Number(pt?.lon ?? pt?.longitude);
+            return Number.isFinite(lat) && Number.isFinite(lon) ? ([lat, lon] as [number, number]) : null;
+          })
+          .filter((pt): pt is [number, number] => pt !== null);
+
+        if (cleanPath.length < 2) return;
+
         // Outer glow casing
-        const casing = L.polyline(path, {
+        const casing = L.polyline(cleanPath, {
           color: '#064E3B',
           weight: 8,
           opacity: 0.65,
@@ -1136,7 +1155,7 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
         });
 
         // Crisp emerald green survey line
-        const line = L.polyline(path, {
+        const line = L.polyline(cleanPath, {
           color: '#10B981',
           weight: 5,
           opacity: 0.95,
@@ -1163,15 +1182,30 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
   useEffect(() => {
     if (!liveBreadcrumbsLayerRef.current) return;
     if (isRecordingTrip && tripBreadcrumbs && tripBreadcrumbs.length > 0) {
-      liveBreadcrumbsLayerRef.current.setStyle({
-        color: '#10B981',
-        weight: 6,
-        opacity: 0.95,
-      });
-      liveBreadcrumbsLayerRef.current.setLatLngs(tripBreadcrumbs);
-    } else {
-      liveBreadcrumbsLayerRef.current.setLatLngs([]);
+      const cleanBreadcrumbs: [number, number][] = tripBreadcrumbs
+        .map((pt: any) => {
+          if (Array.isArray(pt)) {
+            const lat = Number(pt[0]);
+            const lon = Number(pt[1]);
+            return Number.isFinite(lat) && Number.isFinite(lon) ? ([lat, lon] as [number, number]) : null;
+          }
+          const lat = Number(pt?.lat ?? pt?.latitude);
+          const lon = Number(pt?.lon ?? pt?.longitude);
+          return Number.isFinite(lat) && Number.isFinite(lon) ? ([lat, lon] as [number, number]) : null;
+        })
+        .filter((pt): pt is [number, number] => pt !== null);
+
+      if (cleanBreadcrumbs.length > 0) {
+        liveBreadcrumbsLayerRef.current.setStyle({
+          color: '#10B981',
+          weight: 6,
+          opacity: 0.95,
+        });
+        liveBreadcrumbsLayerRef.current.setLatLngs(cleanBreadcrumbs);
+        return;
+      }
     }
+    liveBreadcrumbsLayerRef.current.setLatLngs([]);
   }, [tripBreadcrumbs, isRecordingTrip]);
 
   // Re-centre Camera on Vehicle

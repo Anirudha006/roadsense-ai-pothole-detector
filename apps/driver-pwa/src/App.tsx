@@ -141,9 +141,21 @@ export const App: React.FC = () => {
         const paths = trips
           .filter((t) => (t.path && t.path.length > 1) || ((t as any).breadcrumbs && (t as any).breadcrumbs.length > 1))
           .map((t) => {
-            const pts = t.path || (t as any).breadcrumbs || [];
-            return pts.map((p: any) => [p.lat, p.lon] as [number, number]);
-          });
+            const pts = (t.path || (t as any).breadcrumbs || []) as any[];
+            return pts
+              .map((p: any) => {
+                if (Array.isArray(p)) {
+                  const lat = Number(p[0]);
+                  const lon = Number(p[1]);
+                  return Number.isFinite(lat) && Number.isFinite(lon) ? ([lat, lon] as [number, number]) : null;
+                }
+                const lat = Number(p?.lat ?? p?.latitude);
+                const lon = Number(p?.lon ?? p?.longitude);
+                return Number.isFinite(lat) && Number.isFinite(lon) ? ([lat, lon] as [number, number]) : null;
+              })
+              .filter((c): c is [number, number] => c !== null);
+          })
+          .filter((p) => p.length > 1);
         setPastSurveyedPaths(paths);
       } catch (e) {
         console.warn('Failed to load past survey trips:', e);
