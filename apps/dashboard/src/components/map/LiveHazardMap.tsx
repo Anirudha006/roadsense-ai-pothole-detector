@@ -18,7 +18,7 @@ import type { Hazard, SeverityLevel } from '../../types';
 import { SURVEYED_ROADS_DATA, TOTAL_SURVEYED_DISTANCE_KM } from '@roadsense/shared';
 
 export const LiveHazardMap: React.FC = () => {
-  const { filteredHazards, selectedHazard, setSelectedHazard, wards, filters, setFilters, totalSurveyedKm, stats } = useHazards();
+  const { filteredHazards, selectedHazard, setSelectedHazard, wards, filters, setFilters, totalSurveyedKm, stats, trainingImages } = useHazards();
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersLayerRef = useRef<L.LayerGroup | null>(null);
@@ -129,7 +129,39 @@ export const LiveHazardMap: React.FC = () => {
       surveyedRoadsLayerRef.current?.addLayer(casing);
       surveyedRoadsLayerRef.current?.addLayer(line);
     });
-  }, [showSurveyedRoads]);
+
+    // Also render live driver fleet surveyed breadcrumb corridors from Supabase / trainingImages
+    if (trainingImages && trainingImages.length > 1) {
+      const sortedPoints = [...trainingImages]
+        .filter((r) => Number.isFinite(Number(r.lat)) && Number.isFinite(Number(r.lon)))
+        .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+        .map((r) => [Number(r.lat), Number(r.lon)] as [number, number]);
+
+      if (sortedPoints.length > 1) {
+        const fleetCasing = L.polyline(sortedPoints, {
+          color: '#064E3B',
+          weight: 8,
+          opacity: 0.75,
+          lineCap: 'round',
+        });
+        const fleetLine = L.polyline(sortedPoints, {
+          color: '#10B981',
+          weight: 5,
+          opacity: 0.95,
+          lineCap: 'round',
+        });
+        const tooltip = `
+          <div style="font-family: system-ui; padding: 4px; font-size: 11px;">
+            <b style="color: #059669;">🟢 Live Surveyed Fleet Route</b><br/>
+            <span style="color: #64748B;">GPS Points: ${sortedPoints.length} | Real-Time Sync</span>
+          </div>
+        `;
+        fleetLine.bindTooltip(tooltip, { sticky: true });
+        surveyedRoadsLayerRef.current?.addLayer(fleetCasing);
+        surveyedRoadsLayerRef.current?.addLayer(fleetLine);
+      }
+    }
+  }, [showSurveyedRoads, trainingImages]);
 
   // Render Hazard Markers
   useEffect(() => {

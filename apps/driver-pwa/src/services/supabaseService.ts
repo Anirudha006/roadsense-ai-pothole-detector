@@ -2,7 +2,7 @@
 // Driver PWA Edge -> Supabase Cloud Integration
 
 const metaEnv = (import.meta as any).env || {};
-const SUPABASE_URL = metaEnv.VITE_SUPABASE_URL || 'https://qqzmzjhuhsusbixuhrjb.supabase.co';
+const SUPABASE_URL = metaEnv.VITE_SUPABASE_URL || 'https://qgzmzjhuhsusbixuhrjb.supabase.co';
 const SUPABASE_ANON_KEY = metaEnv.VITE_SUPABASE_ANON_KEY || 'sb_publishable_p7VjDkLhxJKghjnCVc8RXQ_Z-n3FAel';
 
 export interface EdgeHazardPayload {

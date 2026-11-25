@@ -343,6 +343,7 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
   const [mapBearing, setMapBearing] = useState<number>(0);
   const [isHeadingUp, setIsHeadingUp] = useState<boolean>(false);
   const [isGestureRotating, setIsGestureRotating] = useState<boolean>(false);
+  const [isTopCardCollapsed, setIsTopCardCollapsed] = useState<boolean>(false);
   const twoFingerStartRef = useRef<{ angle: number; initialBearing: number } | null>(null);
 
   // Sync Heading-Up auto-orientation with active vehicle heading
@@ -1350,9 +1351,32 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
           </div>
         )}
 
+        {/* ================= COLLAPSED FULL-SCREEN MAP SEARCH PILL ================= */}
+        {isExpanded && !isNavigating && isTopCardCollapsed && (
+          <div className="absolute top-3 left-3 right-3 z-30 bg-[#0F172A]/90 backdrop-blur-md border border-slate-700/80 px-3.5 py-2 rounded-full shadow-2xl flex items-center justify-between text-white pointer-events-auto animate-in fade-in duration-150">
+            <div
+              onClick={() => setIsTopCardCollapsed(false)}
+              className="flex items-center gap-2.5 min-w-0 flex-1 cursor-pointer"
+            >
+              <div className="w-2.5 h-2.5 rounded-full bg-rose-500 flex-shrink-0 animate-pulse"></div>
+              <span className="text-xs font-extrabold truncate text-white">{destPoint.name}</span>
+              <span className="text-[10px] text-cyan-400 font-bold flex-shrink-0">10 min (3.4 km)</span>
+            </div>
+            <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+              <button
+                onClick={() => setIsTopCardCollapsed(false)}
+                className="px-2.5 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-slate-200 border border-slate-700 active:scale-95 transition-all flex items-center gap-1"
+                title="Expand Destination Search"
+              >
+                <span>Route Details</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* ================= EXPANDED VIEW: TOP FROM-WHERE-TO-WHERE BAR (PREVIEW MODE) ================= */}
-        {isExpanded && !isNavigating && (
-          <div className="absolute top-2.5 left-2.5 right-2.5 z-30 bg-[#0F172A]/95 backdrop-blur-md border border-slate-800 px-3 pt-3 pb-2.5 shadow-2xl rounded-2xl flex flex-col gap-2 text-white pointer-events-auto animate-in fade-in duration-200">
+        {isExpanded && !isNavigating && !isTopCardCollapsed && (
+          <div className="absolute top-0 left-0 right-0 z-30 bg-[#0F172A]/95 backdrop-blur-md border-b border-slate-800 px-3.5 pt-3 pb-2.5 shadow-2xl rounded-b-2xl flex flex-col gap-2 text-white pointer-events-auto animate-in fade-in duration-200">
             <div className="flex items-center gap-2">
               <div className="flex flex-col gap-1.5 flex-1 min-w-0">
                 {/* FROM INPUT */}
@@ -1394,7 +1418,7 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
                 </div>
               </div>
 
-              {/* Action Buttons: Swap & Exit */}
+              {/* Action Buttons: Swap, Full Map Toggle & Exit */}
               <div className="flex flex-col gap-1.5 flex-shrink-0">
                 <button
                   onClick={handleSwapLocations}
@@ -1402,6 +1426,13 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
                   title="Swap Origin & Destination"
                 >
                   <ArrowUpDown className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setIsTopCardCollapsed(true)}
+                  className="w-8 h-8 rounded-xl bg-[#1E293B] hover:bg-[#334155] flex items-center justify-center text-teal-300 active:scale-95 transition-all border border-slate-700"
+                  title="Full Screen Map Mode (Hide Search Details)"
+                >
+                  <Maximize2 className="w-4 h-4" />
                 </button>
                 {onToggleExpand && (
                   <button
