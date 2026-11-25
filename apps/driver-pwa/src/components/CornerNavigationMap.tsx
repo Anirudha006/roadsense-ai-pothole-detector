@@ -414,16 +414,23 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
     return `${hours}:${minutes} ${ampm}`;
   };
 
-  // Continuous ResizeObserver ensures Leaflet tiles always fill 100% of the screen
+  // Continuous ResizeObserver and window resize listener ensures Leaflet tiles always fill 100% of the screen
   useEffect(() => {
     if (!mapContainerRef.current) return;
-    const observer = new ResizeObserver(() => {
+    const triggerResize = () => {
       if (mapInstanceRef.current) {
         mapInstanceRef.current.invalidateSize({ pan: false });
       }
-    });
+    };
+    const observer = new ResizeObserver(triggerResize);
     observer.observe(mapContainerRef.current);
-    return () => observer.disconnect();
+    window.addEventListener('resize', triggerResize);
+    window.addEventListener('orientationchange', triggerResize);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', triggerResize);
+      window.removeEventListener('orientationchange', triggerResize);
+    };
   }, []);
 
   // Initialize Leaflet Map ONCE on persistent DOM container
@@ -1599,14 +1606,16 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
         >
           <div
             ref={mapContainerRef}
-            className="w-full h-full"
+            className="w-full h-full absolute inset-0"
             style={{
               position: 'absolute',
-              width: '150%',
-              height: '150%',
-              top: '-25%',
-              left: '-25%',
-              transform: `rotate(${mapBearing}deg)`,
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100%',
+              height: '100%',
+              transform: mapBearing !== 0 ? `rotate(${mapBearing}deg)` : undefined,
               transformOrigin: 'center center',
               transition: isGestureRotating ? 'none' : 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)',
               touchAction: 'none',
