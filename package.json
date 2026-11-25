@@ -16,7 +16,7 @@
     "dev:dashboard": "npm --workspace=@roadsense/dashboard run dev",
     "build:dashboard": "npm --workspace=@roadsense/dashboard run build",
     "preview:dashboard": "npm --workspace=@roadsense/dashboard run preview",
-    "build": "npm run build:driver && npm run build:dashboard"
+    "build": "npm run build:dashboard && node scripts/copy-dist.js"
   },
   "keywords": [
     "pothole-detection",
