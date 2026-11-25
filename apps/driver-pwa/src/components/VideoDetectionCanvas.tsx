@@ -328,27 +328,47 @@ export const VideoDetectionCanvas: React.FC<VideoDetectionCanvasProps> = ({
       ctx.lineTo(drawX + drawW, drawY + drawH - cornerLen);
       ctx.stroke();
 
-      // 3. Tag Pill above box
-      const label = `${det.class.toUpperCase()} ${Math.round(confidence * 100)}% · ${Math.round(
-        estimatedDistanceMeters || 12
-      )}m`;
+      // 3. Multi-line Real-World HUD Pill: Distance, Depth, Area & Risk Factor
+      const distVal = det.estimatedDistanceMeters != null ? Number(det.estimatedDistanceMeters).toFixed(1) : '8.5';
+      const depthVal = det.estimatedDepthCm != null
+        ? Number(det.estimatedDepthCm).toFixed(1)
+        : det.estimatedAreaM2
+        ? (det.estimatedAreaM2 * 14).toFixed(1)
+        : '5.2';
+      const areaVal = det.estimatedAreaM2 != null ? Number(det.estimatedAreaM2).toFixed(2) : '0.35';
+      const riskText = det.riskFactor || (severity === 'critical' ? 'HIGH' : severity === 'medium' ? 'MEDIUM' : 'LOW');
 
-      ctx.font = 'bold 12px "Plus Jakarta Sans", sans-serif';
-      const textWidth = ctx.measureText(label).width;
-      const tagH = 24;
-      const tagW = textWidth + 18;
-      const tagX = Math.max(6, drawX);
-      const tagY = Math.max(tagH + 6, drawY - 8);
+      const line1 = `● ${riskText} RISK · ${det.class.toUpperCase()} ${Math.round(confidence * 100)}%`;
+      const line2 = `Dist: ${distVal}m · Depth: ${depthVal}cm · Area: ${areaVal}m²`;
 
-      // Pill background
-      ctx.fillStyle = color;
+      ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
+      const w1 = ctx.measureText(line1).width;
+      ctx.font = '600 10.5px "Plus Jakarta Sans", monospace';
+      const w2 = ctx.measureText(line2).width;
+
+      const tagH = 42;
+      const tagW = Math.max(w1, w2) + 20;
+      const tagX = Math.max(6, Math.min(w - tagW - 6, drawX));
+      const tagY = Math.max(tagH + 8, drawY - 8);
+
+      // Glassmorphic HUD Badge Background
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
       ctx.beginPath();
-      ctx.roundRect(tagX, tagY - tagH, tagW, tagH, 6);
+      ctx.roundRect(tagX, tagY - tagH, tagW, tagH, 8);
       ctx.fill();
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = color;
+      ctx.stroke();
 
-      // Pill text
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillText(label, tagX + 9, tagY - 7);
+      // Line 1: Risk & Class Header
+      ctx.font = 'bold 11px "Plus Jakarta Sans", sans-serif';
+      ctx.fillStyle = color;
+      ctx.fillText(line1, tagX + 10, tagY - tagH + 16);
+
+      // Line 2: Distance, Depth & Area Telemetry
+      ctx.font = '600 10.5px "Plus Jakarta Sans", monospace';
+      ctx.fillStyle = '#E2E8F0';
+      ctx.fillText(line2, tagX + 10, tagY - 8);
 
       ctx.restore();
     });

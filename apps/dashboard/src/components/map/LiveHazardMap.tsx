@@ -188,7 +188,7 @@ export const LiveHazardMap: React.FC = () => {
           </div>
           <p style="font-size: 11px; color: #5B7479; margin: 0 0 6px 0;">${wardName}</p>
           <div style="font-size: 11px; color: #334155; line-height: 1.5; margin-bottom: 8px;">
-            Area: <b>${h.estimatedAreaM2} m²</b><br/>
+            Area: <b>${h.estimatedAreaM2} m²</b> · Depth: <b>${h.estimatedDepthCm || Math.round(h.estimatedAreaM2 * 14)} cm</b><br/>
             Speed: <b>${h.speedKmh} km/h</b> · Sightings: <b>${h.verificationCount}x</b>
           </div>
           ${h.status === 'repaired' ? `

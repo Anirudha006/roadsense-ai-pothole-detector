@@ -127,6 +127,10 @@ class DetectorService {
       severityScore: d.severityScore,
       estimatedAreaM2: d.estimatedAreaM2,
       estimatedDistanceMeters: d.estimatedDistanceMeters,
+      estimatedDepthCm: d.estimatedDepthCm,
+      widthCm: d.widthCm,
+      lengthCm: d.lengthCm,
+      riskFactor: d.riskFactor,
     }));
   }
 

@@ -85,13 +85,15 @@ class AudioAlertService {
   }
 
   /**
-   * Speaks a safety alert in English, Kannada, or Hindi
+   * Speaks a safety alert in English, Kannada, or Hindi with depth and distance telemetry
    */
   public speakAlert(
     hazardClass: string,
     distanceMeters: number,
     severity: 'low' | 'medium' | 'critical',
-    hazardId?: string
+    hazardId?: string,
+    depthCm?: number,
+    riskFactor?: string
   ) {
     if (this.isMuted) return;
 
@@ -113,20 +115,28 @@ class AudioAlertService {
     if (typeof window === 'undefined' || !('speechSynthesis' in window)) return;
 
     const distRounded = Math.round(distanceMeters);
+    const depthRounded = depthCm ? Math.round(depthCm) : 0;
 
     let phrase = '';
     let langCode = 'en-US';
 
     if (this.language === 'kn') {
       langCode = 'kn-IN';
-      phrase = `ಎಚ್ಚರಿಕೆ! ${distRounded} ಮೀಟರ್ ದೂರದಲ್ಲಿ ರಸ್ತೆ ಗುಂಡಿ ಇದೆ.`;
+      phrase = depthRounded > 0
+        ? `ಎಚ್ಚರಿಕೆ! ${distRounded} ಮೀಟರ್ ದೂರದಲ್ಲಿ ${depthRounded} ಸೆಂಟಿಮೀಟರ್ ಆಳದ ರಸ್ತೆ ಗುಂಡಿ ಇದೆ.`
+        : `ಎಚ್ಚರಿಕೆ! ${distRounded} ಮೀಟರ್ ದೂರದಲ್ಲಿ ರಸ್ತೆ ಗುಂಡಿ ಇದೆ.`;
     } else if (this.language === 'hi') {
       langCode = 'hi-IN';
-      phrase = `सावधान! ${distRounded} मीटर आगे गड्ढा है.`;
+      phrase = depthRounded > 0
+        ? `सावधान! ${distRounded} मीटर आगे ${depthRounded} सेंटीमीटर गहरा गड्ढा है.`
+        : `सावधान! ${distRounded} मीटर आगे गड्ढा है.`;
     } else {
       langCode = 'en-US';
       const label = hazardClass.includes('crack') ? 'crack' : 'pothole';
-      phrase = `Warning! Pothole detected, ${distRounded} meters ahead.`;
+      const riskPrefix = riskFactor === 'HIGH' || severity === 'critical' ? 'High risk ' : '';
+      phrase = depthRounded > 0
+        ? `Warning! ${riskPrefix}${label} detected, ${distRounded} meters ahead, ${depthRounded} centimeters deep.`
+        : `Warning! ${riskPrefix}${label} detected, ${distRounded} meters ahead.`;
     }
 
     try {

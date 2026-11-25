@@ -356,13 +356,45 @@ public class OnnxDetectorPlugin extends Plugin {
         String[] classMap = numClasses == 1 ? CLASS_NAMES_1 : numClasses == 3 ? CLASS_NAMES_3 : CLASS_NAMES_4;
         for (Candidate item : kept) {
             double dist = estimateDistance(item.bottomY);
-            double rawScore = 0.45 * (item.areaRatio * 100.0) + 0.35 * (item.bottomY * 100.0) + 0.20 * (item.conf * 100.0);
-            int score = (int) Math.min(100, Math.max(0, Math.round(rawScore)));
-            String severity = score >= 70 ? "critical" : score >= 40 ? "medium" : "low";
-            double areaM2 = Math.round(Math.max(0.04, item.areaRatio * dist * 2.8) * 100.0) / 100.0;
+            double normW = item.w / (double) Math.max(1, origW);
+            double normH = item.h / (double) Math.max(1, origH);
+            double distFactor = dist > 12.0 ? Math.pow(12.0 / dist, 0.65) : 1.0;
+            double widthMeters = Math.max(0.15, Math.min(1.4, normW * dist * 1.15 * distFactor));
+            double lengthMeters = Math.max(0.15, Math.min(1.4, normH * dist * 1.25 * distFactor));
+            int widthCm = (int) Math.round(widthMeters * 100.0);
+            int lengthCm = (int) Math.round(lengthMeters * 100.0);
+            double areaM2 = Math.round(Math.min(2.5, Math.max(0.03, (Math.PI / 4.0) * widthMeters * lengthMeters)) * 100.0) / 100.0;
+            double effDiameterCm = Math.sqrt(widthCm * lengthCm);
+
             String className = (item.classIdx >= 0 && item.classIdx < classMap.length)
                     ? classMap[item.classIdx]
                     : "hazard_" + item.classIdx;
+            boolean isPothole = className.toLowerCase().contains("pothole");
+            boolean isRutting = className.toLowerCase().contains("rutting");
+
+            double rawDepthCm;
+            if (isPothole) {
+                double cavityFactor = 0.85 + 0.25 * Math.min(1.0, Math.max(0.3, (double) item.conf));
+                rawDepthCm = 0.085 * effDiameterCm * cavityFactor;
+                rawDepthCm = Math.min(14.0, Math.max(1.8, rawDepthCm));
+            } else if (isRutting) {
+                rawDepthCm = Math.min(5.5, Math.max(1.2, 0.050 * effDiameterCm));
+            } else {
+                rawDepthCm = Math.min(3.0, Math.max(0.6, 0.030 * effDiameterCm));
+            }
+            double depthCm = Math.round(rawDepthCm * 10.0) / 10.0;
+
+            String riskFactor = "LOW";
+            if (depthCm >= 5.0 || areaM2 >= 0.35 || (depthCm >= 4.0 && areaM2 >= 0.20)) {
+                riskFactor = "HIGH";
+            } else if (depthCm >= 2.8 || areaM2 >= 0.12) {
+                riskFactor = "MEDIUM";
+            }
+
+            double baseScore = 0.45 * Math.min(1.0, item.areaRatio * 25.0) * 100.0 + 0.35 * (item.bottomY * 100.0) + 0.20 * (item.conf * 100.0);
+            double depthFactor = 0.85 + 0.25 * Math.min(1.0, Math.max(0.0, (depthCm - 2.0) / 6.0));
+            int score = (int) Math.min(100, Math.max(0, Math.round(baseScore * depthFactor)));
+            String severity = "HIGH".equals(riskFactor) || score >= 70 ? "critical" : "MEDIUM".equals(riskFactor) || score >= 40 ? "medium" : "low";
 
             JSObject boxObj = new JSObject();
             boxObj.put("x", Math.round(item.x));
@@ -379,6 +411,10 @@ public class OnnxDetectorPlugin extends Plugin {
             detObj.put("severityScore", score);
             detObj.put("estimatedDistanceMeters", dist);
             detObj.put("estimatedAreaM2", areaM2);
+            detObj.put("estimatedDepthCm", depthCm);
+            detObj.put("widthCm", widthCm);
+            detObj.put("lengthCm", lengthCm);
+            detObj.put("riskFactor", riskFactor);
             outArray.put(detObj);
         }
         return outArray;
@@ -395,14 +431,14 @@ public class OnnxDetectorPlugin extends Plugin {
     }
 
     private double estimateDistance(float bottomNormalizedY) {
-        double tiltRad = Math.toRadians(10.0);
+        double tiltRad = Math.toRadians(12.0);
         double fovYRad = Math.toRadians(55.0);
         double focalY = 0.5 / Math.tan(fovYRad / 2.0);
         double deltaY = bottomNormalizedY - 0.5;
         double angleBelowCenter = Math.atan2(deltaY, focalY);
         double totalAngle = tiltRad + angleBelowCenter;
-        if (totalAngle <= 0.05) return 80.0;
-        double dist = 1.2 / Math.tan(totalAngle);
-        return Math.min(100.0, Math.max(2.0, Math.round(dist * 10.0) / 10.0));
+        if (totalAngle <= 0.04) return 60.0;
+        double dist = 1.35 / Math.tan(totalAngle);
+        return Math.min(60.0, Math.max(1.5, Math.round(dist * 10.0) / 10.0));
     }
 }

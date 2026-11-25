@@ -340,11 +340,15 @@ export const App: React.FC = () => {
 
       // Find closest urgent detection
       const urgent = detections[0];
-      const dist = urgent.estimatedDistanceMeters || 38;
+      const dist = urgent.estimatedDistanceMeters != null ? urgent.estimatedDistanceMeters : 12;
 
-      // Depth thresholding: Two-wheelers alert at >3cm, cars at >5cm
-      const depthThreshold = vehicleType === 'two_wheeler' ? 3.0 : 5.0;
-      const estimatedDepthCm = urgent.estimatedAreaM2 ? Math.round(urgent.estimatedAreaM2 * 14) : 6.5;
+      // Real-world physical Depth (cm), Area (m2), and Risk Factor
+      const estimatedDepthCm = urgent.estimatedDepthCm ?? (urgent.estimatedAreaM2 ? Math.round(urgent.estimatedAreaM2 * 14 * 10) / 10 : 5.5);
+      const estimatedAreaM2 = urgent.estimatedAreaM2 ?? 0.35;
+      const riskFactor = urgent.riskFactor || (estimatedDepthCm >= (vehicleType === 'two_wheeler' ? 3.8 : 5.0) ? 'HIGH' : estimatedDepthCm >= 2.5 ? 'MEDIUM' : 'LOW');
+
+      // Depth thresholding: Two-wheelers alert at >2.5cm, cars at >4.5cm
+      const depthThreshold = vehicleType === 'two_wheeler' ? 2.5 : 4.5;
 
       // Suppress noisy audible alarms when stationary (< 8 km/h) or low confidence (< 0.60)
       // This ensures 100% real road ground truth and eliminates indoor false alarms!
@@ -356,10 +360,10 @@ export const App: React.FC = () => {
       }
 
       // Respect Risk Factor Alert Filter (High Only vs Med+High vs All)
-      if (settings.riskFactorFilter === 'high_only' && urgent.severity !== 'critical') {
+      if (settings.riskFactorFilter === 'high_only' && riskFactor !== 'HIGH') {
         return; // Suppress medium / low alerts
       }
-      if (settings.riskFactorFilter === 'medium_high' && urgent.severity === 'low') {
+      if (settings.riskFactorFilter === 'medium_high' && riskFactor === 'LOW') {
         return; // Suppress low risk alerts
       }
 
@@ -372,6 +376,11 @@ export const App: React.FC = () => {
           severity: urgent.severity,
           confidence: urgent.confidence,
           detectedAt: Date.now(),
+          estimatedDepthCm,
+          estimatedAreaM2,
+          widthCm: urgent.widthCm,
+          lengthCm: urgent.lengthCm,
+          riskFactor,
         };
 
         setActiveAlert(alertObj);
@@ -379,7 +388,7 @@ export const App: React.FC = () => {
         // Voice, Chime & Haptic Warnings (Only when driving or in active trip)
         if (isAudibleEligible) {
           if (settings.voiceAlertsEnabled) {
-            audioAlertService.speakAlert(urgent.class, dist, urgent.severity, alertObj.id);
+            audioAlertService.speakAlert(urgent.class, dist, urgent.severity, alertObj.id, estimatedDepthCm, riskFactor);
           } else if (settings.soundChimeEnabled) {
             audioAlertService.playChime(urgent.severity);
           }
@@ -408,7 +417,11 @@ export const App: React.FC = () => {
             verificationCount: 1,
             status: 'reported',
             imageUrl: snapshotUrl,
-            estimatedAreaM2: urgent.estimatedAreaM2 || 0.4,
+            estimatedAreaM2,
+            estimatedDepthCm,
+            widthCm: urgent.widthCm,
+            lengthCm: urgent.lengthCm,
+            riskFactor,
             reporterHash: `drv_${Math.floor(1000 + Math.random() * 9000)}`,
           };
 

@@ -247,7 +247,7 @@ export const TicketKanbanBoard: React.FC = () => {
                             <span className="truncate">{crew ? crew.name.split(' ')[0] : 'Unassigned'}</span>
                           </span>
                           <span className="font-mono font-bold text-[#0F2A2E] bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
-                            {hazard?.estimatedAreaM2 || 0.4} m² · {hazard ? Math.round(hazard.estimatedAreaM2 * 14) : 6} cm
+                            {hazard?.estimatedAreaM2 || 0.4} m² · {hazard?.estimatedDepthCm || (hazard ? Math.round(hazard.estimatedAreaM2 * 14) : 6)} cm
                           </span>
                         </div>
 
@@ -355,7 +355,7 @@ export const TicketKanbanBoard: React.FC = () => {
                       </td>
                       <td className="py-3 px-4 text-[#0F2A2E] font-medium">{crew?.name || 'Unassigned'}</td>
                       <td className="py-3 px-4 font-mono font-bold text-[#0D9488]">
-                        {hazard?.estimatedAreaM2 || 0.4} m² · {hazard ? Math.round(hazard.estimatedAreaM2 * 14) : 6} cm
+                        {hazard?.estimatedAreaM2 || 0.4} m² · {hazard?.estimatedDepthCm || (hazard ? Math.round(hazard.estimatedAreaM2 * 14) : 6)} cm
                       </td>
                       <td className="py-3 px-4 text-[#5B7479]">
                         {t.dueDate ? new Date(t.dueDate).toLocaleDateString() : 'N/A'}

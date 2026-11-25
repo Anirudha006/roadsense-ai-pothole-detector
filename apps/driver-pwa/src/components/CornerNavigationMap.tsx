@@ -1113,8 +1113,28 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
         iconAnchor: [11, 11],
       });
 
+      const depthVal = hazard.estimatedDepthCm != null
+        ? `${hazard.estimatedDepthCm} cm`
+        : hazard.estimatedAreaM2
+        ? `${Math.round(hazard.estimatedAreaM2 * 14)} cm`
+        : '5.2 cm';
+      const areaVal = hazard.estimatedAreaM2 != null ? `${hazard.estimatedAreaM2} m²` : '0.35 m²';
+      const riskVal = hazard.riskFactor || (hazard.severity === 'critical' ? 'HIGH' : hazard.severity === 'medium' ? 'MEDIUM' : 'LOW');
+      const pinColor = isSevere ? '#EF4444' : '#F59E0B';
+
       const marker = L.marker([hLat, hLon], { icon: hazardIcon });
-      marker.bindPopup(`<b>${hazard.class}</b><br/>Severity: ${hazard.severity}`);
+      marker.bindPopup(`
+        <div style="font-family: sans-serif; font-size: 11px; padding: 3px; min-width: 140px;">
+          <div style="font-weight: 800; text-transform: uppercase; color: #0F172A; margin-bottom: 3px;">
+            <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: ${pinColor}; margin-right: 4px;"></span>
+            ${riskVal} RISK · ${hazard.class}
+          </div>
+          <div style="color: #475569; font-size: 10.5px; line-height: 1.4;">
+            🕳️ Depth: <b style="color: #0F172A;">${depthVal}</b><br/>
+            📐 Area: <b style="color: #0F172A;">${areaVal}</b>
+          </div>
+        </div>
+      `);
       hazardsLayerRef.current?.addLayer(marker);
     });
   }, [hazards]);

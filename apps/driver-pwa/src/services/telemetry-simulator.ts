@@ -132,9 +132,14 @@ export class TelemetrySimulator {
       const severity = severities[Math.floor(Math.random() * severities.length)];
       const conf = Math.round((0.65 + Math.random() * 0.32) * 100) / 100;
       const score = severity === 'critical' ? 70 + Math.floor(Math.random() * 28) : severity === 'medium' ? 40 + Math.floor(Math.random() * 28) : 15 + Math.floor(Math.random() * 24);
-      const area = Math.round((0.15 + Math.random() * 1.85) * 100) / 100;
+      const area = Math.round((0.15 + Math.random() * 0.85) * 100) / 100;
       const verifications = Math.floor(Math.random() * 7) + 1;
       const firstSeen = now - Math.floor(Math.random() * 14 * 86400000);
+
+      const widthCm = Math.round(Math.sqrt((area * 4) / Math.PI) * 100);
+      const lengthCm = Math.round(widthCm * (0.85 + Math.random() * 0.3));
+      const depthCm = Math.round((severity === 'critical' ? 5.5 + Math.random() * 4.0 : severity === 'medium' ? 3.0 + Math.random() * 1.8 : 1.8 + Math.random() * 1.0) * 10) / 10;
+      const riskFactor = severity === 'critical' ? 'HIGH' : severity === 'medium' ? 'MEDIUM' : 'LOW';
 
       hazards.push({
         id: `hz_${city.toLowerCase()}_${i + 1}`,
@@ -152,6 +157,10 @@ export class TelemetrySimulator {
         status: verifications >= 3 ? 'verified' : 'reported',
         wardId: wards[Math.floor(Math.random() * wards.length)],
         estimatedAreaM2: area,
+        estimatedDepthCm: depthCm,
+        widthCm,
+        lengthCm,
+        riskFactor,
         reporterHash: `drv_${Math.floor(1000 + Math.random() * 9000)}`,
       });
     }

@@ -4,6 +4,8 @@
 
 export type SeverityLevel = 'low' | 'medium' | 'critical';
 
+export type RiskFactor = 'LOW' | 'MEDIUM' | 'HIGH';
+
 export type VehicleType = 'two_wheeler' | 'four_wheeler';
 
 export type DetectionMode = 'camera' | 'vibration' | 'hybrid';
@@ -86,6 +88,10 @@ export interface Detection {
   severityScore: number;
   estimatedAreaM2?: number;
   estimatedDistanceMeters?: number;
+  estimatedDepthCm?: number;
+  widthCm?: number;
+  lengthCm?: number;
+  riskFactor?: RiskFactor;
 }
 
 export interface GPSPoint {
@@ -134,6 +140,10 @@ export interface Hazard {
   imageUrl?: string;
   wardId?: string;
   estimatedAreaM2: number;
+  estimatedDepthCm?: number;
+  widthCm?: number;
+  lengthCm?: number;
+  riskFactor?: RiskFactor;
   reporterHash: string;
 }
 
@@ -212,4 +222,8 @@ export interface SeverityEvaluation {
   severity: SeverityLevel;
   score: number;
   estimatedAreaM2: number;
+  estimatedDepthCm: number;
+  widthCm?: number;
+  lengthCm?: number;
+  riskFactor: RiskFactor;
 }

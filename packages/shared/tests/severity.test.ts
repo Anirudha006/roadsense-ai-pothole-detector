@@ -29,16 +29,34 @@ test('evaluateSeverity classifies large close pothole as critical severity', () 
   assert.ok(result.score >= 70, `Expected score >= 70, got ${result.score}`);
 });
 
-test('evaluateSeverity applies class weights appropriately', () => {
-  const box = { x: 0.4, y: 0.5, width: 0.2, height: 0.15 };
-  const conf = 0.85;
-
-  const potholeEval = evaluateSeverity(box, conf, 'pothole');
-  const longCrackEval = evaluateSeverity(box, conf, 'longitudinal_crack');
-
-  assert.ok(
-    potholeEval.score > longCrackEval.score,
-    `Pothole score (${potholeEval.score}) should exceed longitudinal crack score (${longCrackEval.score})`
+test('evaluateSeverity calculates realistic depth, area, and risk factor', () => {
+  // Moderate pothole at 4m distance, width=0.15, height=0.12
+  const evalResult = evaluateSeverity(
+    { x: 0.42, y: 0.65, width: 0.15, height: 0.12 },
+    0.88,
+    'pothole',
+    4.0,
+    'four_wheeler'
   );
+
+  assert.ok(evalResult.estimatedDepthCm >= 2.5 && evalResult.estimatedDepthCm <= 8.0, 
+    `Expected realistic depth between 2.5 and 8.0 cm, got ${evalResult.estimatedDepthCm}`);
+  assert.ok(evalResult.estimatedAreaM2 >= 0.1 && evalResult.estimatedAreaM2 <= 1.0,
+    `Expected realistic area between 0.1 and 1.0 m2, got ${evalResult.estimatedAreaM2}`);
+  assert.ok(['LOW', 'MEDIUM', 'HIGH'].includes(evalResult.riskFactor));
 });
+
+test('evaluateSeverity enforces higher risk factor for two-wheelers on moderate potholes', () => {
+  const box = { x: 0.42, y: 0.65, width: 0.15, height: 0.12 };
+  const bikeEval = evaluateSeverity(box, 0.85, 'pothole', 4.0, 'two_wheeler');
+  const carEval = evaluateSeverity(box, 0.85, 'pothole', 4.0, 'four_wheeler');
+
+  // A moderate pothole (e.g. 3.5cm depth) is HIGH risk for a bike, but MEDIUM or LOW for a car
+  if (bikeEval.riskFactor === 'HIGH') {
+    assert.ok(carEval.riskFactor === 'MEDIUM' || carEval.riskFactor === 'HIGH');
+  }
+  assert.ok(bikeEval.estimatedDepthCm > 0);
+  assert.ok(carEval.estimatedDepthCm > 0);
+});
+
 

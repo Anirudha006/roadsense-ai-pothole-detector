@@ -30,7 +30,7 @@ export const HazardDetailSlideover: React.FC<SlideoverProps> = ({ hazard, onClos
   const [isCreating, setIsCreating] = useState(false);
 
   const ward = wards.find((w) => w.id === hazard.wardId);
-  const estimatedDepthCm = Math.max(3, Math.round(hazard.estimatedAreaM2 * 14));
+  const estimatedDepthCm = hazard.estimatedDepthCm ?? Math.max(3, Math.round(hazard.estimatedAreaM2 * 14));
 
   const handleCreateWorkOrder = () => {
     setIsCreating(true);
