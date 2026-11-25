@@ -1604,23 +1604,42 @@ export const CornerNavigationMap: React.FC<CornerNavigationMapProps> = ({
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
         >
+          {/* Rotated Map Canvas: 160vmax ensures that at ANY angle (0° to 360°), every corner and edge of the screen is 100% covered with ZERO gaps */}
           <div
-            ref={mapContainerRef}
-            className="w-full h-full absolute inset-0"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              width: '100%',
-              height: '100%',
-              transform: mapBearing !== 0 ? `rotate(${mapBearing}deg)` : undefined,
-              transformOrigin: 'center center',
-              transition: isGestureRotating ? 'none' : 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)',
-              touchAction: 'none',
-            }}
-          />
+            style={
+              isExpanded
+                ? {
+                    position: 'absolute',
+                    width: '160vmax',
+                    height: '160vmax',
+                    top: '50%',
+                    left: '50%',
+                    transform: `translate(-50%, -50%) rotate(${mapBearing}deg)`,
+                    transformOrigin: 'center center',
+                    transition: isGestureRotating ? 'none' : 'transform 0.25s cubic-bezier(0.2, 0, 0, 1)',
+                    touchAction: 'none',
+                  }
+                : {
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    width: '100%',
+                    height: '100%',
+                    touchAction: 'none',
+                  }
+            }
+          >
+            <div
+              ref={mapContainerRef}
+              className="w-full h-full"
+              style={{
+                width: '100%',
+                height: '100%',
+              }}
+            />
+          </div>
 
           {/* ================= FLOATING ROAD SURVEY COVERAGE PILL (NAV MODE ONLY) ================= */}
           {isExpanded && isNavigating && (
